@@ -44,8 +44,15 @@ func TestHashGet(t *testing.T) {
 	}
 }
 
-func BenchmarkHashGet(b *testing.B) {
+func BenchmarkHashGet_5nodes(b *testing.B) {
 	hash := New("a", "b", "c", "d", "e")
+	for i := 0; i < b.N; i++ {
+		hash.Get(sampleKeys[i%len(sampleKeys)])
+	}
+}
+
+func BenchmarkHashGet_10nodes(b *testing.B) {
+	hash := New("a", "b", "c", "d", "e", "f", "g", "h", "i", "j")
 	for i := 0; i < b.N; i++ {
 		hash.Get(sampleKeys[i%len(sampleKeys)])
 	}
@@ -84,9 +91,30 @@ func Test_Hash_GetN(t *testing.T) {
 	}
 }
 
-func BenchmarkHashGetN(b *testing.B) {
+func BenchmarkHashGetN3_5_nodes(b *testing.B) {
 	hash := New("a", "b", "c", "d", "e")
 	for i := 0; i < b.N; i++ {
 		hash.GetN(3, sampleKeys[i%len(sampleKeys)])
+	}
+}
+
+func BenchmarkHashGetN5_5_nodes(b *testing.B) {
+	hash := New("a", "b", "c", "d", "e")
+	for i := 0; i < b.N; i++ {
+		hash.GetN(5, sampleKeys[i%len(sampleKeys)])
+	}
+}
+
+func BenchmarkHashGetN3_10_nodes(b *testing.B) {
+	hash := New("a", "b", "c", "d", "e", "f", "g", "h", "i", "j")
+	for i := 0; i < b.N; i++ {
+		hash.GetN(3, sampleKeys[i%len(sampleKeys)])
+	}
+}
+
+func BenchmarkHashGetN5_10_nodes(b *testing.B) {
+	hash := New("a", "b", "c", "d", "e", "f", "g", "h", "i", "j")
+	for i := 0; i < b.N; i++ {
+		hash.GetN(5, sampleKeys[i%len(sampleKeys)])
 	}
 }
