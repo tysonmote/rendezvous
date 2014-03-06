@@ -4,7 +4,6 @@ import (
 	"hash"
 	"hash/crc32"
 	"sort"
-	"sync"
 )
 
 var (
@@ -25,7 +24,6 @@ func (s byScore) Less(i, j int) bool { return s[i].score < s[j].score }
 type Hash struct {
 	nodes  []nodeScore
 	hasher hash.Hash32
-	sync.Mutex
 }
 
 func New(nodes ...string) *Hash {
@@ -36,18 +34,12 @@ func New(nodes ...string) *Hash {
 }
 
 func (h *Hash) Add(nodes ...string) {
-	h.Lock()
-	defer h.Unlock()
-
 	for _, node := range nodes {
 		h.nodes = append(h.nodes, nodeScore{[]byte(node), 0})
 	}
 }
 
 func (h *Hash) Get(key string) string {
-	h.Lock()
-	defer h.Unlock()
-
 	keyBytes := []byte(key)
 
 	var maxScore uint32
@@ -66,9 +58,6 @@ func (h *Hash) Get(key string) string {
 }
 
 func (h *Hash) GetN(n int, key string) []string {
-	h.Lock()
-	defer h.Unlock()
-
 	if len(h.nodes) == 0 || n == 0 {
 		return []string{}
 	}
