@@ -26,6 +26,7 @@ type Hash struct {
 	hasher hash.Hash32
 }
 
+// New creates a new Hash with the given keys (optional).
 func New(nodes ...string) *Hash {
 	hash := &Hash{}
 	hash.hasher = crc32.New(crc32Table)
@@ -33,12 +34,15 @@ func New(nodes ...string) *Hash {
 	return hash
 }
 
+// Add takes any number of nodes and adds them to this Hash.
 func (h *Hash) Add(nodes ...string) {
 	for _, node := range nodes {
 		h.nodes = append(h.nodes, nodeScore{[]byte(node), 0})
 	}
 }
 
+// Get returns the node with the highest score for the given key. If this Hash
+// has no nodes, an empty string is returned.
 func (h *Hash) Get(key string) string {
 	keyBytes := []byte(key)
 
@@ -57,6 +61,7 @@ func (h *Hash) Get(key string) string {
 	return string(maxNode)
 }
 
+// GetN returns n nodes for the given key, ordered by descending score.
 func (h *Hash) GetN(n int, key string) []string {
 	if len(h.nodes) == 0 || n == 0 {
 		return []string{}
