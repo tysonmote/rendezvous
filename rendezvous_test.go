@@ -5,6 +5,16 @@ import (
 	"testing"
 )
 
+var (
+	sampleKeys = []string{
+		"352DAB08-C1FD-4462-B573-7640B730B721",
+		"382080D3-B847-4BB5-AEA8-644C3E56F4E1",
+		"2B340C12-7958-4DBE-952C-67496E15D0C8",
+		"BE05F82B-902E-4868-8CC9-EE50A6C64636",
+		"C7ECC571-E924-4523-A313-951DFD5D8073",
+	}
+)
+
 type getTestcase struct {
 	key          string
 	expectedNode string
@@ -31,6 +41,13 @@ func TestHashGet(t *testing.T) {
 		if gotNode != testcase.expectedNode {
 			t.Errorf("got: %#v, expected: %#v", gotNode, testcase.expectedNode)
 		}
+	}
+}
+
+func BenchmarkHashGet(b *testing.B) {
+	hash := New("a", "b", "c", "d", "e")
+	for i := 0; i < b.N; i++ {
+		hash.Get(sampleKeys[i%len(sampleKeys)])
 	}
 }
 
@@ -64,5 +81,12 @@ func Test_Hash_GetN(t *testing.T) {
 		if !reflect.DeepEqual(gotNodes, testcase.expectedNodes) {
 			t.Errorf("got: %#v, expected: %#v", gotNodes, testcase.expectedNodes)
 		}
+	}
+}
+
+func BenchmarkHashGetN(b *testing.B) {
+	hash := New("a", "b", "c", "d", "e")
+	for i := 0; i < b.N; i++ {
+		hash.GetN(3, sampleKeys[i%len(sampleKeys)])
 	}
 }
