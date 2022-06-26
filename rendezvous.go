@@ -4,6 +4,7 @@
 package rendezvous
 
 import (
+	"bytes"
 	"hash"
 	"hash/crc32"
 	"sort"
@@ -48,7 +49,7 @@ func (h *Hash) Get(key string) string {
 
 	for _, node := range h.nodes {
 		score := h.hash(node.node, keyBytes)
-		if score > maxScore {
+		if score > maxScore || (score == maxScore && bytes.Compare(node.node, maxNode) < 0) {
 			maxScore = score
 			maxNode = node.node
 		}
@@ -79,9 +80,14 @@ func (h *Hash) GetN(n int, key string) []string {
 
 type nodeScores []nodeScore
 
-func (s nodeScores) Len() int           { return len(s) }
-func (s nodeScores) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-func (s nodeScores) Less(i, j int) bool { return s[j].score < s[i].score } // Descending
+func (s nodeScores) Len() int      { return len(s) }
+func (s nodeScores) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s nodeScores) Less(i, j int) bool {
+	if s[i].score == s[j].score {
+		return bytes.Compare(s[i].node, s[j].node) < 0
+	}
+	return s[j].score < s[i].score // Descending
+}
 
 func (h *Hash) hash(node, key []byte) uint32 {
 	h.hasher.Reset()
