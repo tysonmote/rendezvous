@@ -65,7 +65,7 @@ func (h *Hash) GetN(n int, key string) []string {
 	for i := 0; i < len(h.nodes); i++ {
 		h.nodes[i].score = h.hash(h.nodes[i].node, keyBytes)
 	}
-	sort.Sort(h.nodes)
+	sort.Sort(&h.nodes)
 
 	if n > len(h.nodes) {
 		n = len(h.nodes)
@@ -80,13 +80,13 @@ func (h *Hash) GetN(n int, key string) []string {
 
 type nodeScores []nodeScore
 
-func (s nodeScores) Len() int      { return len(s) }
-func (s nodeScores) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-func (s nodeScores) Less(i, j int) bool {
-	if s[i].score == s[j].score {
-		return bytes.Compare(s[i].node, s[j].node) < 0
+func (s *nodeScores) Len() int      { return len(*s) }
+func (s *nodeScores) Swap(i, j int) { (*s)[i], (*s)[j] = (*s)[j], (*s)[i] }
+func (s *nodeScores) Less(i, j int) bool {
+	if (*s)[i].score == (*s)[j].score {
+		return bytes.Compare((*s)[i].node, (*s)[j].node) < 0
 	}
-	return s[j].score < s[i].score // Descending
+	return (*s)[j].score < (*s)[i].score // Descending
 }
 
 func (h *Hash) hash(node, key []byte) uint32 {
