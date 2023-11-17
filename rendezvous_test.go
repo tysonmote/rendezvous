@@ -1,6 +1,7 @@
 package rendezvous
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 )
@@ -114,5 +115,33 @@ func BenchmarkHashGetN5_10_nodes(b *testing.B) {
 	hash := New("a", "b", "c", "d", "e", "f", "g", "h", "i", "j")
 	for i := 0; i < b.N; i++ {
 		hash.GetN(5, sampleKeys[i%len(sampleKeys)])
+	}
+}
+
+func TestHashRemove(t *testing.T) {
+	hash := New("a", "b", "c")
+
+	var keyForB string
+	for i := 0; i < 10000; i++ {
+		randomKey := fmt.Sprintf("key-%d", i)
+		if hash.Get(randomKey) == "b" {
+			keyForB = randomKey
+			break
+		}
+	}
+
+	if keyForB == "" {
+		t.Fatalf("Failed to find a key that maps to 'b'")
+	}
+
+	hash.Remove("b")
+
+	// Check if the key now maps to a different node
+	newNode := hash.Get(keyForB)
+	if newNode == "b" {
+		t.Errorf("Key %s still maps to removed node 'b'", keyForB)
+	}
+	if newNode == "" {
+		t.Errorf("Key %s does not map to any node after removing 'b'", keyForB)
 	}
 }
