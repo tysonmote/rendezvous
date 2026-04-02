@@ -79,6 +79,7 @@ func Test_Hash_GetN(t *testing.T) {
 		{3, "baz", []string{"d", "a", "b"}},
 		{2, "biz", []string{"b", "a"}},
 		{0, "boz", []string{}},
+		{-1, "boz", []string{}},
 		{100, "floo", []string{"d", "a", "b", "c", "e"}},
 	}
 

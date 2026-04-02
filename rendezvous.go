@@ -61,6 +61,9 @@ func (h *Hash) Get(key string) string {
 // GetN returns no more than n nodes for the given key, ordered by descending
 // score. GetN is not goroutine-safe.
 func (h *Hash) GetN(n int, key string) []string {
+	if n < 0 {
+		n = 0
+	}
 	keyBytes := unsafeBytes(key)
 	for i := 0; i < len(h.nodes); i++ {
 		h.nodes[i].score = h.hash(h.nodes[i].node, keyBytes)
