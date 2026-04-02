@@ -8,6 +8,7 @@ package rendezvous
 
 import (
 	"bytes"
+	"container/heap"
 	"hash"
 	"hash/crc32"
 	"sort"
@@ -84,15 +85,38 @@ func (h *Hash) GetN(n int, key string) []string {
 	for i := range scored {
 		scored[i].score = h.hash(scored[i].node, keyBytes)
 	}
-	sort.Sort(&scored)
 
 	if n > len(scored) {
 		n = len(scored)
 	}
+	if n == 0 {
+		return []string{}
+	}
+
+	var top nodeScores
+	if n == len(scored) {
+		sort.Sort(&scored)
+		top = scored
+	} else {
+		th := &topKHeap{}
+		for _, s := range scored {
+			if th.Len() < n {
+				heap.Push(th, s)
+			} else if nodeScoreBetter(s, (*th)[0]) {
+				heap.Pop(th)
+				heap.Push(th, s)
+			}
+		}
+		top = make(nodeScores, n)
+		for i := range top {
+			top[i] = heap.Pop(th).(nodeScore)
+		}
+		sort.Sort(&top)
+	}
 
 	nodes := make([]string, n)
 	for i := range nodes {
-		nodes[i] = string(scored[i].node)
+		nodes[i] = string(top[i].node)
 	}
 	return nodes
 }
@@ -119,6 +143,40 @@ func (s *nodeScores) Less(i, j int) bool {
 		return bytes.Compare((*s)[i].node, (*s)[j].node) < 0
 	}
 	return (*s)[j].score < (*s)[i].score // Descending
+}
+
+// topKHeap is a min-heap of nodeScore ordered by "worst first": lower score
+// is worse; ties break toward larger node names (lexicographic).
+type topKHeap []nodeScore
+
+func (h topKHeap) Len() int           { return len(h) }
+func (h topKHeap) Less(i, j int) bool { return nodeScoreWorse(h[i], h[j]) }
+func (h topKHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+func (h *topKHeap) Push(x any) {
+	*h = append(*h, x.(nodeScore))
+}
+
+func (h *topKHeap) Pop() any {
+	old := *h
+	n := len(old)
+	x := old[n-1]
+	*h = old[:n-1]
+	return x
+}
+
+func nodeScoreWorse(a, b nodeScore) bool {
+	if a.score != b.score {
+		return a.score < b.score
+	}
+	return bytes.Compare(a.node, b.node) > 0
+}
+
+func nodeScoreBetter(a, b nodeScore) bool {
+	if a.score != b.score {
+		return a.score > b.score
+	}
+	return bytes.Compare(a.node, b.node) < 0
 }
 
 func (h *Hash) hash(node, key []byte) uint32 {
