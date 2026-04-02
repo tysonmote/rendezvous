@@ -4,4 +4,4 @@ known as highest random weight hashing).
 [API documentation][api]
 
 [wikipedia]: http://en.wikipedia.org/wiki/Rendezvous_hashing
-[api]: http://godoc.org/github.com/tysonmote/rendezvous
+[api]: https://pkg.go.dev/github.com/tysonmote/rendezvous
