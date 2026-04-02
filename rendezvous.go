@@ -110,6 +110,9 @@ func (h *Hash) hash(node, key []byte) uint32 {
 	return h.hasher.Sum32()
 }
 
+// unsafeBytes maps a string to a byte slice without copying. Callers must not
+// retain the returned slice after the callee returns: hash.Hash.Write must
+// consume the bytes during the call and must not keep references to them.
 func unsafeBytes(s string) []byte {
 	return *(*[]byte)(unsafe.Pointer(&s))
 }
