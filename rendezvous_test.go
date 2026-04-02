@@ -3,6 +3,7 @@ package rendezvous
 import (
 	"fmt"
 	"reflect"
+	"sync"
 	"testing"
 )
 
@@ -17,6 +18,24 @@ var sampleKeys = []string{
 type getTestcase struct {
 	key          string
 	expectedNode string
+}
+
+func TestHashConcurrentGet(t *testing.T) {
+	hash := New("a", "b", "c", "d", "e")
+	const goroutines = 64
+	const iters = 500
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+	for g := 0; g < goroutines; g++ {
+		go func(offset int) {
+			defer wg.Done()
+			for i := 0; i < iters; i++ {
+				key := fmt.Sprintf("key-%d-%d", offset, i)
+				_ = hash.Get(key)
+			}
+		}(g)
+	}
+	wg.Wait()
 }
 
 func TestHashGet(t *testing.T) {
