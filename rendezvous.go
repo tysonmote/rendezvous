@@ -83,13 +83,13 @@ func (h *Hash) GetN(n int, key string) []string {
 
 // Remove removes a node from the Hash, if it exists
 func (h *Hash) Remove(node string) {
-    nodeBytes := []byte(node)
-    for i, ns := range h.nodes {
-        if bytes.Equal(ns.node, nodeBytes) {
-            h.nodes = append(h.nodes[:i], h.nodes[i+1:]...)
-            return
-        }
-    }
+	nodeBytes := []byte(node)
+	for i, ns := range h.nodes {
+		if bytes.Equal(ns.node, nodeBytes) {
+			h.nodes = append(h.nodes[:i], h.nodes[i+1:]...)
+			return
+		}
+	}
 }
 
 type nodeScores []nodeScore
