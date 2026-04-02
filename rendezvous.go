@@ -59,24 +59,26 @@ func (h *Hash) Get(key string) string {
 }
 
 // GetN returns no more than n nodes for the given key, ordered by descending
-// score. GetN is not goroutine-safe.
+// score. It does not reorder the internal node list. GetN is not goroutine-safe.
 func (h *Hash) GetN(n int, key string) []string {
 	if n < 0 {
 		n = 0
 	}
 	keyBytes := unsafeBytes(key)
-	for i := 0; i < len(h.nodes); i++ {
-		h.nodes[i].score = h.hash(h.nodes[i].node, keyBytes)
+	scored := make(nodeScores, len(h.nodes))
+	copy(scored, h.nodes)
+	for i := range scored {
+		scored[i].score = h.hash(scored[i].node, keyBytes)
 	}
-	sort.Sort(&h.nodes)
+	sort.Sort(&scored)
 
-	if n > len(h.nodes) {
-		n = len(h.nodes)
+	if n > len(scored) {
+		n = len(scored)
 	}
 
 	nodes := make([]string, n)
 	for i := range nodes {
-		nodes[i] = string(h.nodes[i].node)
+		nodes[i] = string(scored[i].node)
 	}
 	return nodes
 }

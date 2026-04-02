@@ -63,6 +63,20 @@ type getNTestcase struct {
 	expectedNodes []string
 }
 
+func TestGetNPreservesAddOrder(t *testing.T) {
+	hash := New("z", "a", "m")
+	_ = hash.GetN(2, "foo")
+	if len(hash.nodes) != 3 {
+		t.Fatalf("len(nodes) = %d, want 3", len(hash.nodes))
+	}
+	want := []string{"z", "a", "m"}
+	for i, name := range want {
+		if string(hash.nodes[i].node) != name {
+			t.Fatalf("after GetN, node[%d] = %q, want %q", i, hash.nodes[i].node, name)
+		}
+	}
+}
+
 func Test_Hash_GetN(t *testing.T) {
 	hash := New()
 
