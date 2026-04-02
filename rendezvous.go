@@ -1,6 +1,9 @@
 // Package rendezvous implements rendezvous hashing (a.k.a. highest random
 // weight hashing). See http://en.wikipedia.org/wiki/Rendezvous_hashing for
 // more information.
+//
+// Hash is safe for concurrent use: multiple goroutines may call Get, GetN, Add,
+// and Remove on the same instance.
 package rendezvous
 
 import (
@@ -8,14 +11,21 @@ import (
 	"hash"
 	"hash/crc32"
 	"sort"
+	"sync"
 	"unsafe"
 )
 
 var crc32Table = crc32.MakeTable(crc32.Castagnoli)
 
+var hasherPool = sync.Pool{
+	New: func() any {
+		return crc32.New(crc32Table)
+	},
+}
+
 type Hash struct {
-	nodes  nodeScores
-	hasher hash.Hash32
+	mu    sync.RWMutex
+	nodes nodeScores
 }
 
 type nodeScore struct {
@@ -25,15 +35,15 @@ type nodeScore struct {
 
 // New returns a new Hash ready for use with the given nodes.
 func New(nodes ...string) *Hash {
-	hash := &Hash{
-		hasher: crc32.New(crc32Table),
-	}
-	hash.Add(nodes...)
-	return hash
+	h := &Hash{}
+	h.Add(nodes...)
+	return h
 }
 
 // Add adds additional nodes to the Hash.
 func (h *Hash) Add(nodes ...string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	for _, node := range nodes {
 		h.nodes = append(h.nodes, nodeScore{node: []byte(node)})
 	}
@@ -47,6 +57,8 @@ func (h *Hash) Get(key string) string {
 
 	keyBytes := unsafeBytes(key)
 
+	h.mu.RLock()
+	defer h.mu.RUnlock()
 	for _, node := range h.nodes {
 		score := h.hash(node.node, keyBytes)
 		if score > maxScore || (score == maxScore && bytes.Compare(node.node, maxNode) < 0) {
@@ -59,14 +71,16 @@ func (h *Hash) Get(key string) string {
 }
 
 // GetN returns no more than n nodes for the given key, ordered by descending
-// score. It does not reorder the internal node list. GetN is not goroutine-safe.
+// score. It does not reorder the internal node list.
 func (h *Hash) GetN(n int, key string) []string {
 	if n < 0 {
 		n = 0
 	}
 	keyBytes := unsafeBytes(key)
+	h.mu.RLock()
 	scored := make(nodeScores, len(h.nodes))
 	copy(scored, h.nodes)
+	h.mu.RUnlock()
 	for i := range scored {
 		scored[i].score = h.hash(scored[i].node, keyBytes)
 	}
@@ -85,6 +99,8 @@ func (h *Hash) GetN(n int, key string) []string {
 
 // Remove removes a node from the Hash, if it exists
 func (h *Hash) Remove(node string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	nodeBytes := []byte(node)
 	for i, ns := range h.nodes {
 		if bytes.Equal(ns.node, nodeBytes) {
@@ -106,10 +122,12 @@ func (s *nodeScores) Less(i, j int) bool {
 }
 
 func (h *Hash) hash(node, key []byte) uint32 {
-	h.hasher.Reset()
-	h.hasher.Write(key)
-	h.hasher.Write(node)
-	return h.hasher.Sum32()
+	digest := hasherPool.Get().(hash.Hash32)
+	defer hasherPool.Put(digest)
+	digest.Reset()
+	digest.Write(key)
+	digest.Write(node)
+	return digest.Sum32()
 }
 
 // unsafeBytes maps a string to a byte slice without copying. Callers must not
