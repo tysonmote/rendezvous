@@ -41,13 +41,26 @@ func New(nodes ...string) *Hash {
 	return h
 }
 
-// Add adds additional nodes to the Hash.
+// Add adds additional nodes to the Hash. Duplicate node names are ignored.
 func (h *Hash) Add(nodes ...string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	for _, node := range nodes {
-		h.nodes = append(h.nodes, nodeScore{node: []byte(node)})
+		b := []byte(node)
+		if h.hasNodeBytes(b) {
+			continue
+		}
+		h.nodes = append(h.nodes, nodeScore{node: b})
 	}
+}
+
+func (h *Hash) hasNodeBytes(b []byte) bool {
+	for _, ns := range h.nodes {
+		if bytes.Equal(ns.node, b) {
+			return true
+		}
+	}
+	return false
 }
 
 // Get returns the node with the highest score for the given key. If this Hash

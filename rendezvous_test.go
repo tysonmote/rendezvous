@@ -20,6 +20,13 @@ type getTestcase struct {
 	expectedNode string
 }
 
+func TestAddDedupesNodes(t *testing.T) {
+	hash := New("a", "b", "a", "b", "c")
+	if len(hash.nodes) != 3 {
+		t.Fatalf("len(nodes) = %d, want 3 (unique a,b,c)", len(hash.nodes))
+	}
+}
+
 func TestHashConcurrentGet(t *testing.T) {
 	hash := New("a", "b", "c", "d", "e")
 	const goroutines = 64
